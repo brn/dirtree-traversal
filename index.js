@@ -6,6 +6,26 @@
 'use strict';
 var fs = require('fs');
 var Promise = require('node-promise');
+var path = require('path');
+
+var ANY = /[\s\S]*/;
+var PATH_REG = /\\/g;
+
+function resolve(p) {
+  return path.resolve(p).replace(PATH_REG, '/');
+}
+
+function promise(fn) {
+  var defer = Promise.defer();
+  fn(function(ret, err) {
+    if (err) {
+      defer.reject(err);
+    } else {
+      defer.resolve(ret);
+    }
+  });
+  return defer.promise;
+};
 
 
 /**
@@ -16,11 +36,12 @@ var Promise = require('node-promise');
 module.exports = function(path, fn, excludes, matcher) {
   excludes = excludes || /[^\s\S]/;
   matcher = matcher || ANY;
-  path = exports.resolve(path);
+  path = resolve(path);
   var defer = Promise.defer();
   var promises = [];
 
-  fs.readdir(path, function(node) {
+  fs.readdir(path, function(err, node) {
+    if (err) defer.reject(err);
     var stack = [[node, path]];
     var currentpath = path;
     var next;
@@ -36,11 +57,11 @@ module.exports = function(path, fn, excludes, matcher) {
       if (next !== '.' && next !== '..') {
         entry = node[1] + '/' + next;
         fs.stat(entry, function(err, stat) {
-          if (err) throw err;
+          if (err) defer.reject(err);
           if (stat.isDirectory()) {
             stack.push([node[0], node[1]]);
             fs.readdir(entry, function(err, dir) {
-              if (err) throw err;
+              if (err) defer.reject(err);
               node = [dir, entry];
               dirEnt = node[0];
               setImmediate(innerLoop);
@@ -52,7 +73,7 @@ module.exports = function(path, fn, excludes, matcher) {
             if (excludes.test(entry)) {
               return setImmediate(innerLoop);
             }
-            promises.push(exports.promise(fn.bind(entry, entry)));
+            promises.push(promise(fn.bind(entry, entry)));
             return setImmediate(innerLoop);
           }
         });
@@ -81,7 +102,7 @@ module.exports = function(path, fn, excludes, matcher) {
 module.exports.sync = function(path, fn, excludes, matcher) {
   excludes = excludes || /[^\s\S]/;
   matcher = matcher || ANY;
-  path = exports.resolve(path);
+  path = resolve(path);
 
   var node = fs.readdirSync(path);
   var isCall = typeof fn === 'function';
