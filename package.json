@@ -2,7 +2,7 @@
   "author": "Taketoshi Aono(brn) <dobaw20@gmail.com>",
   "description": "Walk directory tree.",
   "repository": {
-    "url": "git@github.com:brn/diretree-traversal.git"
+    "url": "git@github.com:brn/dirtree-traversal.git"
   },
   "name": "dirtree-traversal",
   "version": "0.1.0",
