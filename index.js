@@ -41,7 +41,7 @@ module.exports = function(path, fn, excludes, matcher) {
   var promises = [];
 
   fs.readdir(path, function(err, node) {
-    if (err) defer.reject(err);
+    if (err) return defer.reject(err);
     var stack = [[node, path]];
     var currentpath = path;
     var next;
@@ -57,11 +57,11 @@ module.exports = function(path, fn, excludes, matcher) {
       if (next !== '.' && next !== '..') {
         entry = node[1] + '/' + next;
         fs.stat(entry, function(err, stat) {
-          if (err) defer.reject(err);
+          if (err) return defer.reject(err);
           if (stat.isDirectory()) {
             stack.push([node[0], node[1]]);
             fs.readdir(entry, function(err, dir) {
-              if (err) defer.reject(err);
+              if (err) return defer.reject(err);
               node = [dir, entry];
               dirEnt = node[0];
               setImmediate(innerLoop);
